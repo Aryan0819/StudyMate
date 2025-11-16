@@ -1,0 +1,38 @@
+from groq import Groq
+import os
+
+# 1. IMPORTANT: PASTE YOUR GROQ API KEY HERE
+api_key = "gsk_LbUGG***************************"
+
+if api_key == "YOUR_GROQ_API_KEY_HERE":
+    print("!!! ERROR: Please open this file (test_connection.py) and paste your Groq API key on line 5.")
+    exit()
+
+print(f"Testing API call with key: {api_key[:5]}...")
+
+try:
+    client = Groq(api_key=api_key)
+
+    print("Attempting simple chat API call with Groq...")
+
+    chat_completion = client.chat.completions.create(
+         messages=[
+            {
+                "role": "system",
+                "content": "You are a test bot. Respond with 'OK'."
+            },
+            {
+                "role": "user",
+                "content": "Hello!",
+            }
+        ],
+        model="llama3-8b-8192",
+    )
+
+    response = chat_completion.choices[0].message.content
+    print("\n--- TEST SUCCEEDED! ---")
+    print(f"API Response: {response}")
+
+except Exception as e:
+    print("\n--- TEST FAILED ---")
+    print(f"The API call failed. Error details: {e}")
