@@ -1,14 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
-/* RESET */
-* {
+ {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
 }
 
-/* ANIMATED BACKGROUND */
 body {
     min-height: 100vh;
     display: flex;
@@ -26,7 +24,6 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-/* GLASSMORPHISM CARD */
 .glass-card {
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(12px);
@@ -93,7 +90,6 @@ input:focus { background: rgba(255, 255, 255, 0.3); box-shadow: 0 0 10px rgba(25
 }
 .btn-secondary:hover { background: rgba(255,255,255,0.3); }
 
-/* ROADMAP SPECIFIC STYLES */
 .roadmap-container {
     margin-top: 20px;
     text-align: left;
@@ -102,7 +98,6 @@ input:focus { background: rgba(255, 255, 255, 0.3); box-shadow: 0 0 10px rgba(25
     padding-right: 10px;
 }
 
-/* Custom Scrollbar */
 .roadmap-container::-webkit-scrollbar { width: 6px; }
 .roadmap-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
 
@@ -119,7 +114,6 @@ input:focus { background: rgba(255, 255, 255, 0.3); box-shadow: 0 0 10px rgba(25
 .month-goal { font-style: italic; color: #ccc; margin-bottom: 10px; font-size: 0.9rem; }
 .task-list li { margin-bottom: 4px; font-size: 0.9rem; color: #eee; margin-left: 20px; }
 
-/* CHAT SPECIFIC STYLES */
 .chat-box {
     height: 350px;
     overflow-y: auto;
@@ -132,4 +126,5 @@ input:focus { background: rgba(255, 255, 255, 0.3); box-shadow: 0 0 10px rgba(25
 }
 .msg { padding: 10px 15px; margin: 5px; border-radius: 15px; max-width: 80%; font-size: 0.9rem; }
 .msg.user { align-self: flex-end; background: #23a6d5; color: white; border-bottom-right-radius: 2px; }
+
 .msg.bot { align-self: flex-start; background: rgba(255,255,255,0.85); color: #333; border-bottom-left-radius: 2px; }
