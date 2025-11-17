@@ -1,13 +1,10 @@
 const API_BASE_URL = "http://127.0.0.1:5000";
-
-// --- DOM Elements ---
 const loginBtn = document.getElementById("loginBtn");
 const signupBtn = document.getElementById("signupBtn"); // For the form submit
 const roadmapForm = document.getElementById("roadmap-form");
 const chatInput = document.getElementById("chatInput");
 const chatSendBtn = document.getElementById("chatSendBtn");
 
-// --- Utility: Check Auth ---
 function checkAuth() {
     const token = localStorage.getItem("auth_token");
     if (!token) {
@@ -16,7 +13,6 @@ function checkAuth() {
     return token;
 }
 
-// --- 1. LOGIN Logic ---
 if (loginBtn) {
     loginBtn.addEventListener("click", async () => {
         const u = document.getElementById("username").value;
@@ -42,7 +38,6 @@ if (loginBtn) {
     });
 }
 
-// --- 2. SIGNUP Logic ---
 const signupForm = document.getElementById("signupForm");
 if (signupForm) {
     signupForm.addEventListener("submit", async (e) => {
@@ -67,8 +62,6 @@ if (signupForm) {
     });
 }
 
-// --- 3. HOME PAGE Logic ---
-// *** UPDATED THIS LINE ***
 if (document.getElementById("welcomeUser")) {
     const user = localStorage.getItem("username");
     if (!user) window.location.href = "index.html";
@@ -76,7 +69,6 @@ if (document.getElementById("welcomeUser")) {
     document.getElementById("welcomeUser").textContent = user;
 }
 
-// --- 4. ROADMAP GENERATION Logic ---
 if (roadmapForm) {
     checkAuth();
     // Load existing plan on load
@@ -135,7 +127,6 @@ function renderPlan(plan) {
     
     let delay = 0;
     
-    // Loop through 1 to 12
     for (let i = 1; i <= 12; i++) {
         if (plan[i]) {
             const card = document.createElement("div");
@@ -154,7 +145,6 @@ function renderPlan(plan) {
     }
 }
 
-// --- 5. CHAT Logic ---
 if (chatInput) {
     checkAuth();
     const chatBox = document.getElementById("chat-box");
@@ -174,7 +164,6 @@ if (chatInput) {
         addMsg(txt, "user");
         chatInput.value = "";
         
-        // Loading indicator
         const loading = document.createElement("div");
         loading.className = "msg bot";
         loading.textContent = "Thinking...";
@@ -199,10 +188,7 @@ if (chatInput) {
 }
 
 
-// --- 6. LOGOUT Logic ---
 
-// *** ADDED THIS FUNCTION ***
-// This is called by your new home.html button
 function logout() {
     window.location.href = "logout.html";
 }
@@ -216,3 +202,4 @@ if (document.getElementById("logout-page-identifier")) {
         window.location.href = "index.html";
     }, 1500);
 }
+
