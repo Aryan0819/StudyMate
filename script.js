@@ -1,171 +1,218 @@
 const API_BASE_URL = "http://127.0.0.1:5000";
 
-// --- AUTH HELPERS ---
-function getToken() { return localStorage.getItem('auth_token'); }
-function getUsername() { return localStorage.getItem('user_id'); }
-function logout() { localStorage.clear(); window.location.href = "/templates/index.html"; }
+// --- DOM Elements ---
+const loginBtn = document.getElementById("loginBtn");
+const signupBtn = document.getElementById("signupBtn"); // For the form submit
+const roadmapForm = document.getElementById("roadmap-form");
+const chatInput = document.getElementById("chatInput");
+const chatSendBtn = document.getElementById("chatSendBtn");
 
-// --- LOGIN ---
-async function handleLogin(e) {
-    e.preventDefault();
-    const btn = e.target.querySelector('button');
-    const originalText = btn.innerText;
-    btn.innerText = "Verifying...";
-    
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+// --- Utility: Check Auth ---
+function checkAuth() {
+    const token = localStorage.getItem("auth_token");
+    if (!token) {
+        window.location.href = "index.html";
+    }
+    return token;
+}
 
-    try {
-        const res = await fetch(`${API_BASE_URL}/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
-        });
-        const data = await res.json();
+// --- 1. LOGIN Logic ---
+if (loginBtn) {
+    loginBtn.addEventListener("click", async () => {
+        const u = document.getElementById("username").value;
+        const p = document.getElementById("password").value;
+        if (!u || !p) return alert("Please fill in all fields");
+
+        try {
+            loginBtn.textContent = "Logging in...";
+            const res = await fetch(`${API_BASE_URL}/login`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: u, password: p })
+            });
+            const data = await res.json();
+            if (data.status === "success") {
+                localStorage.setItem("auth_token", data.auth_token);
+                localStorage.setItem("username", data.username);
+                window.location.href = "home.html";
+            } else {
+                alert(data.message);
+            }
+        } catch (e) { alert("Server error"); }
+        loginBtn.textContent = "Login";
+    });
+}
+
+// --- 2. SIGNUP Logic ---
+const signupForm = document.getElementById("signupForm");
+if (signupForm) {
+    signupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const u = document.getElementById("newUsername").value;
+        const p = document.getElementById("newPassword").value;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/signup`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: u, password: p })
+            });
+            const data = await res.json();
+            if (data.status === "success") {
+                localStorage.setItem("auth_token", data.auth_token);
+                localStorage.setItem("username", data.username);
+                window.location.href = "home.html";
+            } else {
+                alert(data.message);
+            }
+        } catch (e) { alert("Server error"); }
+    });
+}
+
+// --- 3. HOME PAGE Logic ---
+// *** UPDATED THIS LINE ***
+if (document.getElementById("welcomeUser")) {
+    const user = localStorage.getItem("username");
+    if (!user) window.location.href = "index.html";
+    // *** UPDATED THIS LINE ***
+    document.getElementById("welcomeUser").textContent = user;
+}
+
+// --- 4. ROADMAP GENERATION Logic ---
+if (roadmapForm) {
+    checkAuth();
+    // Load existing plan on load
+    fetchPlan();
+
+    roadmapForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("generate-btn");
+        const msg = document.getElementById("form-message");
+        const token = localStorage.getItem("auth_token");
+
+        btn.disabled = true;
+        btn.textContent = "AI is Thinking...";
+        msg.textContent = "Crafting your strategy...";
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/generate_plan`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                body: JSON.stringify({
+                    career_goal: document.getElementById("careerGoal").value,
+                    yearly_goal: document.getElementById("yearlyGoal").value
+                })
+            });
+            const data = await res.json();
+            if (data.status === "success") {
+                renderPlan(data.plan);
+                msg.textContent = "";
+            } else {
+                msg.textContent = data.message;
+            }
+        } catch (err) { msg.textContent = "Error connecting to AI."; }
         
-        if (res.ok) {
-            localStorage.setItem("auth_token", data.auth_token);
-            localStorage.setItem("user_id", data.username);
-            window.location.href = "home.html";
-        } else {
-            alert(data.message);
-        }
-    } catch (err) { alert("Server error. Is app.py running?"); }
-    btn.innerText = originalText;
-}
-
-// --- SIGNUP ---
-async function handleSignup(e) {
-    e.preventDefault();
-    const username = document.getElementById("newUsername").value;
-    const password = document.getElementById("newPassword").value;
-
-    try {
-        const res = await fetch(`${API_BASE_URL}/signup`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
-        });
-        const data = await res.json();
-        if (res.ok) {
-            localStorage.setItem("auth_token", data.auth_token);
-            localStorage.setItem("user_id", data.username);
-            window.location.href = "home.html";
-        } else { alert(data.message); }
-    } catch (err) { console.error(err); }
-}
-
-// --- ROADMAP GENERATION ---
-async function generateRoadmap(e) {
-    e.preventDefault();
-    const token = getToken();
-    if (!token) return window.location.href = "index.html";
-
-    const btn = document.getElementById("generate-btn");
-    const display = document.getElementById("goals-display");
-    
-    btn.disabled = true;
-    btn.innerText = "AI is thinking...";
-    display.innerHTML = "<p style='text-align:center; margin-top:20px;'>✨ Constructing your path to success...</p>";
-
-    const careerGoal = document.getElementById("careerGoal").value;
-    const yearlyGoal = document.getElementById("yearlyGoal").value;
-
-    try {
-        const res = await fetch(`${API_BASE_URL}/generate_plan`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-            body: JSON.stringify({ career_goal: careerGoal, yearly_goal: yearlyGoal })
-        });
-        const data = await res.json();
-
-        if (res.ok) {
-            renderPlan(data.plan);
-        } else {
-            display.innerHTML = `<p style="color:#ff6b6b">Error: ${data.message}</p>`;
-        }
-    } catch (err) {
-        display.innerHTML = `<p style="color:#ff6b6b">Connection Failed.</p>`;
-    } finally {
         btn.disabled = false;
-        btn.innerText = "Regenerate Plan";
-    }
+        btn.textContent = "Regenerate Plan";
+    });
 }
 
-// --- RENDER PLAN (FANCY CARDS) ---
-function renderPlan(plan) {
-    const display = document.getElementById("goals-display");
-    let html = "";
+async function fetchPlan() {
+    const token = localStorage.getItem("auth_token");
+    const username = localStorage.getItem("username");
     
-    // Loop through keys 1 to 12
-    for (let i = 1; i <= 12; i++) {
-        const month = plan[String(i)];
-        if (month) {
-            html += `
-                <div class="month-card">
-                    <div class="month-header">Month ${i}</div>
-                    <div class="month-goal">${month.monthly_goal}</div>
-                    <ul class="task-list">
-                        ${month.weekly.map(task => `<li>${task}</li>`).join('')}
-                    </ul>
-                </div>
-            `;
-        }
-    }
-    display.innerHTML = html;
-}
-
-// --- CHAT FUNCTIONALITY ---
-async function sendChat() {
-    const input = document.getElementById("chatInput");
-    const messages = document.getElementById("messages");
-    const text = input.value.trim();
-    
-    if (!text) return;
-
-    // User Msg
-    messages.innerHTML += `<div class="msg user">${text}</div>`;
-    input.value = "";
-    messages.scrollTop = messages.scrollHeight;
-
-    // Bot Loading
-    const loadingId = "loading-" + Date.now();
-    messages.innerHTML += `<div id="${loadingId}" class="msg bot">...</div>`;
-
     try {
-        const res = await fetch(`${API_BASE_URL}/api/chat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: text })
+        const res = await fetch(`${API_BASE_URL}/plans/${username}`, {
+            headers: { "Authorization": `Bearer ${token}` }
         });
         const data = await res.json();
-        
-        document.getElementById(loadingId).remove();
-        messages.innerHTML += `<div class="msg bot">${data.bot_message}</div>`;
-        messages.scrollTop = messages.scrollHeight;
+        if (data.status === "success") renderPlan(data.plan);
+    } catch (e) { console.log("No existing plan"); }
+}
 
-    } catch (err) {
-        document.getElementById(loadingId).innerText = "Error connecting.";
+function renderPlan(plan) {
+    const container = document.getElementById("roadmap-display");
+    if (!container) return; // Guard clause
+    container.innerHTML = ""; // Clear old
+    
+    let delay = 0;
+    
+    // Loop through 1 to 12
+    for (let i = 1; i <= 12; i++) {
+        if (plan[i]) {
+            const card = document.createElement("div");
+            card.className = "month-card";
+            card.style.animationDelay = `${delay}s`; // Staggered animation
+            
+            let listItems = plan[i].weekly.map(task => `<li>${task}</li>`).join("");
+            
+            card.innerHTML = `
+                <h4>Month ${i}: ${plan[i].monthly_goal}</h4>
+                <ul>${listItems}</ul>
+            `;
+            container.appendChild(card);
+            delay += 0.1; // Increase delay for next card
+        }
     }
 }
 
-// --- INITIALIZATION ---
-document.addEventListener("DOMContentLoaded", () => {
-    // Check what page we are on
-    if (document.getElementById("loginForm")) {
-        document.getElementById("loginForm").addEventListener("submit", handleLogin);
+// --- 5. CHAT Logic ---
+if (chatInput) {
+    checkAuth();
+    const chatBox = document.getElementById("chat-box");
+
+    function addMsg(text, sender) {
+        const d = document.createElement("div");
+        d.className = `msg ${sender}`;
+        d.textContent = text;
+        chatBox.appendChild(d);
+        chatBox.scrollTop = chatBox.scrollHeight;
     }
-    if (document.getElementById("signupForm")) {
-        document.getElementById("signupForm").addEventListener("submit", handleSignup);
-    }
-    if (document.getElementById("roadmap-form")) {
-        document.getElementById("user-id-display").innerText = getUsername() || "Guest";
-        document.getElementById("roadmap-form").addEventListener("submit", generateRoadmap);
+
+    async function sendChat() {
+        const txt = chatInput.value.trim();
+        if(!txt) return;
         
-        // Try to load existing plan
-        // (Optional: You can implement fetchPlan on load like in previous versions)
+        addMsg(txt, "user");
+        chatInput.value = "";
+        
+        // Loading indicator
+        const loading = document.createElement("div");
+        loading.className = "msg bot";
+        loading.textContent = "Thinking...";
+        chatBox.appendChild(loading);
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/chat`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: txt })
+            });
+            const data = await res.json();
+            chatBox.removeChild(loading);
+            addMsg(data.bot_message, "bot");
+        } catch (e) {
+            chatBox.removeChild(loading);
+            addMsg("Connection error.", "bot");
+        }
     }
-    if (document.getElementById("welcomeUser")) {
-        document.getElementById("welcomeUser").innerText = getUsername() || "User";
-    }
-});
+
+    chatSendBtn.addEventListener("click", sendChat);
+    chatInput.addEventListener("keypress", (e) => { if(e.key==="Enter") sendChat(); });
+}
+
+
+// --- 6. LOGOUT Logic ---
+
+// *** ADDED THIS FUNCTION ***
+// This is called by your new home.html button
+function logout() {
+    window.location.href = "logout.html";
+}
+
+// This logic runs *on* the logout.html page
+if (document.getElementById("logout-page-identifier")) {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("username");
+    
+    setTimeout(() => {
+        window.location.href = "index.html";
+    }, 1500);
+}
